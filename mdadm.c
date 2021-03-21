@@ -179,24 +179,7 @@ while (current_address < len + addr) {
   //printf("sizeof(buf) = %lu, sizeof(new_buf_temp) = %lu, offset = %d, already_read_len = %d\n", sizeof(buf), sizeof(new_buf_temp), offset, already_read_len);
   //step 3) process
 //how to know if it's the first or the last block
-/*
-  if (first_block) {
-
-    memcpy(buf + already_read_len, new_buf_temp + (current_address % JBOD_BLOCK_SIZE), 256); 
-  }
-  else if (addr + len - current_address < JBOD_BLOCK_SIZE) { 
-
-    memcpy(buf + already_read_len, new_buf_temp, (addr + len) % JBOD_BLOCK_SIZE);
-
-  }
-  else{
-    //process normal
-    memcpy(buf + already_read_len, new_buf_temp, len);
-
-  }
-  */
-
-/*
+  /*
    if (offset == 0) {
      
      already_read_len += len;
@@ -207,20 +190,20 @@ while (current_address < len + addr) {
 
      already_read_len += 256-offset;
      len_remain = 256-offset;
-     memcpy(buf + already_read_len, new_buf_temp, (addr + len) % JBOD_BLOCK_SIZE);
+     
    }
    else if (len_remain < 256){
 
      already_read_len = len_remain;
-     memcpy(buf + already_read_len, new_buf_temp + (current_address % JBOD_BLOCK_SIZE), 256); 
    }
    else{
 
      already_read_len = 256;
-     memcpy(buf + already_read_len, new_buf_temp, len);
    }
-*/
 
+   //source destination length
+   memcpy(buf + already_read_len, new_buf_temp + offset, len);
+*/
 //how we process data 
   //memcpy(buf + 256, new_buf_temp + offset, JBOD_BLOCK_SIZE);
   //something is 256?  first_block = false;
@@ -232,14 +215,6 @@ while (current_address < len + addr) {
   //read len bytes into buf starting at addr
   //translate_address(addr, &disk_num, &block_num, &offset);
   //seek(disk_num, block_num); //use this at some point
-
-/* Test #2: read across blocks
-  // Disk 8: | * * * * ( * * * * | * * * * ) * * * * |
-  jbod_operation(op, new_buf_temp);
-  memcpy(buf + 0, new_buf_temp + 248, 8);
-  jbod_operation(op, new_buf_temp);
-  memcpy(buf + 8, new_buf + 0, 8);
-*/
 
   return len;
 }
@@ -257,7 +232,7 @@ if (jbod_operation(op, NULL)) {
   return -1;
 }
 
-  op = encode_operation(JBOD_WRITE_BLOCK, 0, 0);
+op = encode_operation(JBOD_WRITE_BLOCK, 0, 0);
 
 //Invalid parameters test
 
@@ -279,6 +254,66 @@ if (addr + len >= JBOD_DISK_SIZE * JBOD_NUM_DISKS){
   return -1;
 
 }
+
+/*
+
+  if (mdadm_read(addr, SIZE, buf1) != -1) {
+    printf("failed: read should fail on an out-of-bound linear address but it did not.\n");
+    goto out;
+  }
+
+  addr = 1048570;
+  if (mdadm_read(addr, SIZE, buf1) != -1) {
+    printf("failed: read should fail if it goes beyond the end of the linear address space but it did not.\n");
+    goto out;
+  }
+
+  uint8_t buf2[2048];
+  if (mdadm_read(0, sizeof(buf2), buf2) != -1) {
+    printf("failed: read should fail on larger than 1024-byte I/O sizes but it did not.\n");
+    goto out;
+  }
+
+  if (mdadm_read(0, SIZE, NULL) != -1) {
+    printf("failed: read should fail when passed a NULL pointer and non-zero length but it did not.\n");
+    goto out;
+  }
+
+  if (mdadm_read(0, 0, NULL) != 0) {
+    printf("failed: 0-length read should succeed with a NULL pointer but it did not.\n");
+    goto out;
+  }
+
+*/
+
+/*
+  if (mdadm_write(addr, SIZE, buf1) == -1) {
+    printf("failed: write should succeed because it is within the linear address space but it failed.\n");
+    goto out;
+  }
+
+  addr = 1048561;
+  if (mdadm_write(addr, SIZE, buf1) != -1) {
+    printf("failed: write should fail if it goes beyond the end of the linear address space but it did not.\n");
+    goto out;
+  }
+
+  uint8_t buf2[2048];
+  if (mdadm_write(0, sizeof(buf2), buf2) != -1) {
+    printf("failed: write should fail on larger than 1024-byte I/O sizes but it did not.\n");
+    goto out;
+  }
+
+  if (mdadm_write(0, SIZE, NULL) != -1) {
+    printf("failed: write should fail when passed a NULL pointer and non-zero length but it did not.\n");
+    goto out;
+  }
+
+  if (mdadm_write(0, 0, NULL) != 0) {
+    printf("failed: 0-length write should succeed with a NULL pointer but it did not.\n");
+    goto out;
+  }
+*/
 
   return len;
 
